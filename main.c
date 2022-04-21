@@ -8,9 +8,6 @@
 #include "utils.h"
 
 
-/* maximum padding size */
-static const size_t MAX_PADSIZE = 16U;
-
 /**
  * 256 numbers of 'random' digits from the Pi number
  */
@@ -63,7 +60,7 @@ int main(int argc, char * argv[]) {
 
     printf("File size: %ld\n", file_len);
 
-    buf = malloc(file_len * sizeof(Byte) + MAX_PADSIZE);
+    buf = malloc(MD2_MAX_PADSIZE + file_len * sizeof(Byte));
     fread(buf, file_len, 1, in_file);
     fclose(in_file);
 
