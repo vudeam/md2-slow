@@ -8,6 +8,7 @@
 typedef uint8_t Byte;
 typedef Byte Checksum[16];
 typedef Byte PiDigits[256];
+typedef Byte MDBuff[48];
 
 /* maximum padding size */
 extern const size_t MD2_MAX_PADSIZE;
@@ -16,6 +17,8 @@ extern const size_t MD2_CHECKSUM_SIZE;
 
 /* size of message block processed */
 extern const size_t MD2_MSG_BLOCK_SIZE;
+
+extern const size_t MD2_MD_BUF_SIZE;
 
 
 /**

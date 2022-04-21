@@ -41,9 +41,11 @@ size_t pad_file(Byte * const buf, long int fsize);
 
 /**
  * Calculate checksum and append it to provided buffer.
- * Note: reallocates buffer to ensure capacity.
+ * Note: reallocates buffer to ensure capacity (changes file size).
+ *
+ * Returns new buf size (with checksum).
  */
-void append_checksum(Byte * const buf, long int fsize);
+size_t append_checksum(Byte * buf, long int fsize);
 
 int main(int argc, char * argv[]) {
     if (argc <= 1) {
@@ -73,13 +75,52 @@ int main(int argc, char * argv[]) {
     /**
      * Step 1 - add file padding
      */
+    //printf("Calculating padding\n");
     file_len += pad_file(M, file_len);
-    fwrite(M, file_len, 1, fopen("padded.txt", "wb"));
+    FILE * fpad = fopen("padded.txt", "wb");
+    fwrite(M, file_len, 1, fpad);
+    fclose(fpad);
 
     /**
      * Step 2 - calculate checksum C and append it to the message
      */
-    append_checksum(M, file_len);
+    //printf("Calculating checksum\n");
+    file_len = append_checksum(M, file_len);
+    FILE * fchk = fopen("with_checksum.txt", "wb");
+    fwrite(M, sizeof(Byte), file_len, fchk);
+    fclose(fchk);
+
+    /**
+     * Step 3 - MD buffer initialization
+     */
+    MDBuff X = { 0 };
+
+    /**
+     * Step 4 - message processing
+     */
+    for (size_t i = 0; i < file_len / MD2_MSG_BLOCK_SIZE; i++) {
+        for (size_t j = 0; j < MD2_MSG_BLOCK_SIZE; j++) {
+            X[16 + j] = M[MD2_MSG_BLOCK_SIZE * i + j];
+            X[32 + j] = X[16 + j] ^ X[j];
+        }
+
+        Byte t = 0;
+
+        for (size_t j = 0; j < 18; j++) {
+            for (size_t k = 0; k < MD2_MD_BUF_SIZE; k++) {
+                X[k] = X[k] ^ S[t];
+                t = X[k];
+            }
+            t = t + j % 256;
+        }
+    }
+
+    FILE * f = fopen("hash.txt", "wb");
+    for (size_t i = 0; i < 16; i++) {
+        fwrite(& X[i], sizeof(Byte), 1, f);
+        printf("%" PRIx8 " ", X[i]);
+    }
+    fclose(f);
 
     free(M);
 
@@ -96,7 +137,7 @@ size_t pad_file(Byte * const buf, long int fsize) {
     return bytes_to_pad;
 }
 
-void append_checksum(Byte * const buf, long int fsize) {
+size_t append_checksum(Byte * buf, long int fsize) {
     Checksum C = { 0 };
     Byte c = 0, L = 0;
 
@@ -108,11 +149,13 @@ void append_checksum(Byte * const buf, long int fsize) {
         }
     }
 
-    if (!realloc(buf, fsize + MD2_CHECKSUM_SIZE)) {
+    if (!(buf = realloc(buf, fsize + MD2_CHECKSUM_SIZE))) {
         free(buf);
         err("(%s)\tUnable to reallocate buffer\n", __func__);
     }
 
     memcpy(buf + fsize, C, MD2_CHECKSUM_SIZE);
+
+    return fsize + MD2_CHECKSUM_SIZE;
 }
 
