@@ -52,20 +52,8 @@ int main(int argc, char * argv[]) {
     return 0;
 }
 
-/*
-void examine_bytes(FILE * fp, uint8_t * const buf, size_t size) {
-    for (size_t byte = 0; byte < size; byte++) {
-        fprintf(fp, "%" PRIx16 " ", buf[byte]);
-        if (!(byte % 8) && !byte) fprintf(fp, "\n");
-    }
-    fprintf(fp, "\n");
-}
-*/
-
 size_t pad_file(uint8_t * const buf, long int fsize) {
     const size_t bytes_to_pad = 16 - fsize % 16;
-        // ? 16 - fsize % 16
-        // : 16;
 
     for (size_t pad_byte = 0; pad_byte < bytes_to_pad; pad_byte++) {
         buf[fsize + pad_byte] = pad_byte;
