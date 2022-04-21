@@ -39,15 +39,21 @@ static const PiDigits S = {
  */
 size_t pad_file(Byte * const buf, long int fsize);
 
+/**
+ * Calculate checksum and append it to provided buffer.
+ * Note: reallocates buffer to ensure capacity.
+ */
+void append_checksum(Byte * const buf, long int fsize);
+
 int main(int argc, char * argv[]) {
     if (argc <= 1) {
-        err("Not enough arguments provided.\nUsage: %s [file]\n", argv[0]);
+        err("Not enough arguments provided\nUsage: %s [file]\n", argv[0]);
 
         return -1;
     }
 
     FILE * in_file;
-    Byte * buf;
+    Byte * M;
     long int file_len;
 
     if (!(in_file = fopen(argv[1], "rb"))) {
@@ -60,22 +66,22 @@ int main(int argc, char * argv[]) {
 
     printf("File size: %ld\n", file_len);
 
-    buf = malloc(MD2_MAX_PADSIZE + file_len * sizeof(Byte));
-    fread(buf, file_len, 1, in_file);
+    M = malloc(MD2_MAX_PADSIZE + file_len * sizeof(Byte));
+    fread(M, file_len, 1, in_file);
     fclose(in_file);
 
     /**
      * Step 1 - add file padding
      */
-    file_len += pad_file(buf, file_len);
-    fwrite(buf, file_len, 1, fopen("padded.txt", "wb"));
+    file_len += pad_file(M, file_len);
+    fwrite(M, file_len, 1, fopen("padded.txt", "wb"));
 
     /**
-     * Step 2 - calculate checksum C
+     * Step 2 - calculate checksum C and append it to the message
      */
-    Checksum C = { 0 };
+    append_checksum(M, file_len);
 
-    free(buf);
+    free(M);
 
     return 0;
 }
@@ -84,9 +90,29 @@ size_t pad_file(Byte * const buf, long int fsize) {
     const size_t bytes_to_pad = 16 - fsize % 16;
 
     for (size_t pad_byte = 0; pad_byte < bytes_to_pad; pad_byte++) {
-        buf[fsize + pad_byte] = pad_byte;
+        buf[fsize + pad_byte] = bytes_to_pad;
     }
 
     return bytes_to_pad;
+}
+
+void append_checksum(Byte * const buf, long int fsize) {
+    Checksum C = { 0 };
+    Byte c = 0, L = 0;
+
+    for (size_t i = 0; i < fsize / MD2_MSG_BLOCK_SIZE; i++) {
+        for (size_t j = 0; j < 16; j++) {
+            c = buf[MD2_MSG_BLOCK_SIZE * i + j];
+            C[j] = S[c ^ L] ^ C[j];
+            L = C[j];
+        }
+    }
+
+    if (!realloc(buf, fsize + MD2_CHECKSUM_SIZE)) {
+        free(buf);
+        err("(%s)\tUnable to reallocate buffer\n", __func__);
+    }
+
+    memcpy(buf + fsize, C, MD2_CHECKSUM_SIZE);
 }
 

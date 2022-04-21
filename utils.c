@@ -6,6 +6,7 @@
 
 const size_t MD2_MAX_PADSIZE = 16U;
 const size_t MD2_CHECKSUM_SIZE = 16U;
+const size_t MD2_MSG_BLOCK_SIZE = 16U;
 
 __attribute__((noreturn)) void err(const char * msg, ...) {
     va_list args;

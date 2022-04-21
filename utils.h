@@ -14,6 +14,9 @@ extern const size_t MD2_MAX_PADSIZE;
 
 extern const size_t MD2_CHECKSUM_SIZE;
 
+/* size of message block processed */
+extern const size_t MD2_MSG_BLOCK_SIZE;
+
 
 /**
  * Write error message to stderr and terminate program.
