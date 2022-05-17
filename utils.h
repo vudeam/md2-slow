@@ -6,6 +6,7 @@
 
 
 typedef uint8_t Byte;
+typedef Byte * M;              /* Message (bytes) buffer */
 typedef Byte Checksum[16];
 typedef Byte PiDigits[256];
 typedef Byte MDBuff[48];

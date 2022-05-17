@@ -55,7 +55,7 @@ int main(int argc, char * argv[]) {
     }
 
     FILE * in_file;
-    Byte * M;
+    M msg;
     long int file_len;
 
     if (!(in_file = fopen(argv[1], "rb"))) {
@@ -66,28 +66,29 @@ int main(int argc, char * argv[]) {
     file_len = ftell(in_file);
     rewind(in_file);
 
-    printf("File size: %ld\n", file_len);
+    fprintf(stderr, "File size: %ld\n", file_len);
 
-    M = malloc(MD2_MAX_PADSIZE + file_len * sizeof(Byte));
-    fread(M, file_len, 1, in_file);
+    msg = malloc(MD2_MAX_PADSIZE + file_len * sizeof(Byte));
+    unsigned long int read_bytes = fread(msg, file_len, 1, in_file);
+    fprintf(stderr, "Read bytes: %lu\n", read_bytes);
     fclose(in_file);
 
     /**
      * Step 1 - add file padding
      */
     //printf("Calculating padding\n");
-    file_len += pad_file(M, file_len);
+    file_len += pad_file(msg, file_len);
     FILE * fpad = fopen("padded.txt", "wb");
-    fwrite(M, file_len, 1, fpad);
+    fwrite(msg, file_len, 1, fpad);
     fclose(fpad);
 
     /**
      * Step 2 - calculate checksum C and append it to the message
      */
     //printf("Calculating checksum\n");
-    file_len = append_checksum(M, file_len);
+    file_len = append_checksum(msg, file_len);
     FILE * fchk = fopen("with_checksum.txt", "wb");
-    fwrite(M, sizeof(Byte), file_len, fchk);
+    fwrite(msg, sizeof(Byte), file_len, fchk);
     fclose(fchk);
 
     /**
@@ -100,7 +101,7 @@ int main(int argc, char * argv[]) {
      */
     for (size_t i = 0; i < file_len / MD2_MSG_BLOCK_SIZE; i++) {
         for (size_t j = 0; j < MD2_MSG_BLOCK_SIZE; j++) {
-            X[16 + j] = M[MD2_MSG_BLOCK_SIZE * i + j];
+            X[16 + j] = msg[MD2_MSG_BLOCK_SIZE * i + j];
             X[32 + j] = X[16 + j] ^ X[j];
         }
 
@@ -122,7 +123,7 @@ int main(int argc, char * argv[]) {
     }
     fclose(f);
 
-    free(M);
+    free(msg);
 
     return 0;
 }
