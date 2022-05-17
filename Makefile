@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c99 -Wall -Werror -Wpedantic -g
+CFLAGS = -std=c99 -Wall -Werror -Wextra -Wpedantic -O2
 
 BINS = md2
 OBJS = main.o utils.o
