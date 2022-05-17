@@ -37,7 +37,7 @@ static const PiDigits S = {
  *
  * Returns padding size.
  */
-size_t pad_file(Byte * const buf, long int fsize);
+size_t pad_file(M const buf, long int fsize);
 
 /**
  * Calculate checksum and append it to provided buffer.
@@ -45,7 +45,7 @@ size_t pad_file(Byte * const buf, long int fsize);
  *
  * Returns new buf size (with checksum).
  */
-size_t append_checksum(Byte * buf, long int fsize);
+size_t append_checksum(M buf, long int fsize);
 
 int main(int argc, char * argv[]) {
     if (argc <= 1) {
@@ -126,7 +126,7 @@ int main(int argc, char * argv[]) {
     return 0;
 }
 
-size_t pad_file(Byte * const buf, long int fsize) {
+size_t pad_file(M const buf, long int fsize) {
     const size_t bytes_to_pad = 16 - fsize % 16;
 
     for (size_t pad_byte = 0; pad_byte < bytes_to_pad; pad_byte++) {
@@ -136,7 +136,7 @@ size_t pad_file(Byte * const buf, long int fsize) {
     return bytes_to_pad;
 }
 
-size_t append_checksum(Byte * buf, long int fsize) {
+size_t append_checksum(M buf, long int fsize) {
     Checksum C = { 0 };
     Byte c = 0, L = 0;
 
