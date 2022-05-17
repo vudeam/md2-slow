@@ -58,47 +58,44 @@ int main(int argc, char * argv[]) {
     M msg;
     long int file_len;
 
+    fprintf(stderr, "[+] Reading file '%s'\n", argv[1]);
     if (!(in_file = fopen(argv[1], "rb"))) {
-        err("Error reading file '%s'\n", argv[1]);
+        err("[!] Error reading file '%s'\n", argv[1]);
     }
 
     fseek(in_file, 0, SEEK_END);
     file_len = ftell(in_file);
     rewind(in_file);
 
-    fprintf(stderr, "File size: %ld\n", file_len);
+    fprintf(stderr, "[+] File size: %ld\n", file_len);
 
     msg = malloc(MD2_MAX_PADSIZE + file_len * sizeof(Byte));
-    unsigned long int read_bytes = fread(msg, file_len, 1, in_file);
-    fprintf(stderr, "Read bytes: %lu\n", read_bytes);
+    unsigned long int read_blocks = fread(msg, sizeof(Byte), file_len, in_file);
+    fprintf(stderr, "[+] Read blocks: %lu\n", read_blocks);
     fclose(in_file);
 
     /**
      * Step 1 - add file padding
      */
-    //printf("Calculating padding\n");
+    fprintf(stderr, "[+] Calculating padding...\n");
     file_len += pad_file(msg, file_len);
-    FILE * fpad = fopen("padded.txt", "wb");
-    fwrite(msg, file_len, 1, fpad);
-    fclose(fpad);
 
     /**
      * Step 2 - calculate checksum C and append it to the message
      */
-    //printf("Calculating checksum\n");
+    fprintf(stderr, "[+] Calculating checksum...\n");
     file_len = append_checksum(msg, file_len);
-    FILE * fchk = fopen("with_checksum.txt", "wb");
-    fwrite(msg, sizeof(Byte), file_len, fchk);
-    fclose(fchk);
 
     /**
      * Step 3 - MD buffer initialization
      */
+    fprintf(stderr, "[+] Initializing MD buffer...\n");
     MDBuff X = { 0 };
 
     /**
      * Step 4 - message processing
      */
+    fprintf(stderr, "[+] Processing input message...\n");
     for (size_t i = 0; i < file_len / MD2_MSG_BLOCK_SIZE; i++) {
         for (size_t j = 0; j < MD2_MSG_BLOCK_SIZE; j++) {
             X[16 + j] = msg[MD2_MSG_BLOCK_SIZE * i + j];
@@ -116,14 +113,15 @@ int main(int argc, char * argv[]) {
         }
     }
 
-    FILE * f = fopen("hash.txt", "wb");
-    for (size_t i = 0; i < 16; i++) {
-        fwrite(& X[i], sizeof(Byte), 1, f);
-        printf("%" PRIx8 " ", X[i]);
-    }
-    fclose(f);
-
     free(msg);
+
+    fprintf(stderr, "\n[*] Hash calculation complete\n");
+    fprintf(stderr, "[*] File: '%s'\n", argv[1]);
+    fprintf(stderr, "[*] Hash: ");
+    for (size_t i = 0; i < 16; i++) {
+        fprintf(stderr, "%02" PRIX8 " ", X[i]);
+    }
+    fputs("\n", stderr);
 
     return 0;
 }
